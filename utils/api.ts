@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3500';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://marketa-server.onrender.com/';
 
 export interface AuthResponse {
   token: string;
