@@ -25,33 +25,47 @@ export interface ChatMessage {
 
 export const authAPI = {
   signup: async (username: string, name: string, email: string, password: string): Promise<{ token: string }> => {
-    const response = await fetch(`${API_BASE_URL}/signup`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, name, email, password }),
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, name, email, password }),
+      });
 
-    if (response.status !== 201) {
-      const error = await response.json().catch(() => ({ message: 'Signup failed' }));
-      throw new Error(error.message || 'Signup failed');
+      if (response.status !== 201) {
+        const error = await response.json().catch(() => ({ message: 'Signup failed' }));
+        throw new Error(error.message || 'Signup failed');
+      }
+
+      return response.json();
+    } catch (error: any) {
+      if (error.message === 'Failed to fetch') {
+        throw new Error('Unable to connect to server. Please check your internet connection or verify the API URL.');
+      }
+      throw error;
     }
-
-    return response.json();
   },
 
   login: async (email: string, password: string): Promise<{ token: string }> => {
-    const response = await fetch(`${API_BASE_URL}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (response.status !== 200) {
-      const error = await response.json().catch(() => ({ message: 'Login failed' }));
-      throw new Error(error.message || 'Login failed');
+      if (response.status !== 200) {
+        const error = await response.json().catch(() => ({ message: 'Login failed' }));
+        throw new Error(error.message || 'Login failed');
+      }
+
+      return response.json();
+    } catch (error: any) {
+      if (error.message === 'Failed to fetch') {
+        throw new Error('Unable to connect to server. Please check your internet connection or verify the API URL.');
+      }
+      throw error;
     }
-
-    return response.json();
   },
 };
 
