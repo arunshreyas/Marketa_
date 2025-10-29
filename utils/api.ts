@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://marketa-server.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3500';
 
 export interface AuthResponse {
   token: string;
@@ -24,30 +24,30 @@ export interface ChatMessage {
 }
 
 export const authAPI = {
-  signup: async (name: string, email: string, password: string): Promise<AuthResponse> => {
+  signup: async (username: string, name: string, email: string, password: string): Promise<{ token: string }> => {
     const response = await fetch(`${API_BASE_URL}/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ username, name, email, password }),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
+    if (response.status !== 201) {
+      const error = await response.json().catch(() => ({ message: 'Signup failed' }));
       throw new Error(error.message || 'Signup failed');
     }
 
     return response.json();
   },
 
-  login: async (email: string, password: string): Promise<AuthResponse> => {
+  login: async (email: string, password: string): Promise<{ token: string }> => {
     const response = await fetch(`${API_BASE_URL}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
+    if (response.status !== 200) {
+      const error = await response.json().catch(() => ({ message: 'Login failed' }));
       throw new Error(error.message || 'Login failed');
     }
 
@@ -140,4 +140,27 @@ export const setUserData = (data: any): void => {
   if (typeof window !== 'undefined') {
     localStorage.setItem('userData', JSON.stringify(data));
   }
+};
+
+export const apiClient = {
+  async request(endpoint: string, options: RequestInit = {}) {
+    const token = getAuthToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        ...headers,
+        ...(options.headers as Record<string, string>),
+      },
+    });
+
+    return response;
+  },
 };

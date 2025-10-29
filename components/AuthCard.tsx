@@ -15,6 +15,7 @@ interface AuthCardProps {
 
 export default function AuthCard({ mode }: AuthCardProps) {
   const router = useRouter();
+  const [username, setUsername] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,19 +30,13 @@ export default function AuthCard({ mode }: AuthCardProps) {
     try {
       let response;
       if (mode === 'signup') {
-        response = await authAPI.signup(name, email, password);
+        response = await authAPI.signup(username, name, email, password);
       } else {
         response = await authAPI.login(email, password);
       }
 
       setAuthToken(response.token);
-      setUserData(response.user);
-
-      if (mode === 'signup' || !response.user.hasBrand) {
-        router.push('/brand');
-      } else {
-        router.push('/dashboard');
-      }
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'An error occurred');
     } finally {
@@ -68,18 +63,32 @@ export default function AuthCard({ mode }: AuthCardProps) {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'signup' && (
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="h-11"
-                />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="johndoe"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="John Doe"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    className="h-11"
+                  />
+                </div>
+              </>
             )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
