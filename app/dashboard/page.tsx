@@ -6,7 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import ChatWindow from '@/components/ChatWindow';
 import InputBar from '@/components/InputBar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { chatAPI, getAuthToken, getUserData, ChatMessage } from '@/utils/api';
+import { chatAPI, getAuthToken, getUserData, ChatMessage, setAuthToken } from '@/utils/api';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -16,12 +16,22 @@ export default function DashboardPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const token = getAuthToken();
-    if (!token) {
+    // 1. Check if there's a token in the URL
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+      if (token) {
+        setAuthToken(token);
+        // Remove token from URL after storing it
+        window.history.replaceState({}, document.title, '/dashboard');
+      }
+    }
+    // 2. Check localStorage for token as before
+    const storedToken = getAuthToken();
+    if (!storedToken) {
       router.push('/login');
       return;
     }
-
     const data = getUserData();
     setUserData(data);
   }, [router]);
