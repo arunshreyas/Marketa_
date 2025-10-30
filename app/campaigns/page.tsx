@@ -35,7 +35,9 @@ export default function CampaignsPage() {
   const fetchCampaigns = async () => {
     setLoading(true);
     try {
-      const userId = localStorage.getItem("userId") || "default-user-id";
+      const userId = typeof window !== 'undefined'
+        ? localStorage.getItem("userId") || "default-user-id"
+        : "default-user-id";
       const response = await fetch(
         `https://marketa-server.onrender.com/campaigns/user/${userId}`
       );

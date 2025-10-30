@@ -60,7 +60,9 @@ export default function CreateCampaignModal({
     setLoading(true);
 
     try {
-      const userId = localStorage.getItem("userId") || "default-user-id";
+      const userId = typeof window !== 'undefined'
+        ? localStorage.getItem("userId") || "default-user-id"
+        : "default-user-id";
 
       const payload = {
         user: userId,
