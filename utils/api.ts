@@ -32,9 +32,9 @@ export const authAPI = {
         body: JSON.stringify({ username, name, email, password }),
       });
 
-      if (response.status !== 201) {
-        const error = await response.json().catch(() => ({ message: 'Signup failed' }));
-        throw new Error(error.message || 'Signup failed');
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: `Signup failed with status ${response.status}` }));
+        throw new Error(error.message || error.error || `Signup failed with status ${response.status}`);
       }
 
       return response.json();
@@ -54,9 +54,9 @@ export const authAPI = {
         body: JSON.stringify({ email, password }),
       });
 
-      if (response.status !== 200) {
-        const error = await response.json().catch(() => ({ message: 'Login failed' }));
-        throw new Error(error.message || 'Login failed');
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: `Login failed with status ${response.status}` }));
+        throw new Error(error.message || error.error || `Login failed with status ${response.status}`);
       }
 
       return response.json();
