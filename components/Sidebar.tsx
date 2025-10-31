@@ -19,8 +19,6 @@ export default function Sidebar() {
 
   const handleLogout = () => {
     removeAuthToken();
-<<<<<<< HEAD
-=======
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem('userId');
@@ -29,7 +27,6 @@ export default function Sidebar() {
         localStorage.removeItem('userData');
       } catch {}
     }
->>>>>>> temp-fixes
     router.push('/login');
   };
 

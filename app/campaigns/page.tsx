@@ -10,17 +10,16 @@ import CreateCampaignModal from "@/components/CreateCampaignModal";
 import toast, { Toaster } from "react-hot-toast";
 
 interface Campaign {
-<<<<<<< HEAD
-  _id: string;
-  campaign_name: string;
-  status: string;
-  goals: string;
-  channels: string;
-  budget: number;
-  start_date: string;
-  end_date: string;
-  audience: string;
-  content: string;
+	_id: string;
+	campaign_name: string;
+	status: string;
+	goals: string;
+	channels: string;
+	budget: number;
+	start_date: string;
+	end_date: string;
+	audience: string;
+	content: string;
 }
 
 export default function CampaignsPage() {
@@ -106,7 +105,7 @@ export default function CampaignsPage() {
 
   const campaignsArray = Array.isArray(campaigns) ? campaigns : [];
   const filteredCampaigns = campaignsArray.filter((campaign) =>
-    campaign.campaign_name.toLowerCase().includes(searchQuery.toLowerCase())
+    (campaign.campaign_name || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -244,7 +243,6 @@ export default function CampaignsPage() {
     </div>
   );
 }
-=======
 	_id: string;
 	campaign_name: string;
 	status: string;
@@ -493,4 +491,3 @@ export default function CampaignsPage() {
 	);
 }
 
->>>>>>> temp-fixes
