@@ -65,7 +65,7 @@ export default function CreateCampaignModal({
         : "default-user-id";
 
       const payload = {
-        user: userId,
+        userId: userId,
         campaign_name: formData.campaign_name,
         status: formData.status,
         goals: formData.goals,

@@ -35,7 +35,7 @@ export default function AuthCard({ mode }: AuthCardProps) {
     setLoading(true);
 
     try {
-      let response;
+      let response: any;
       if (mode === 'signup') {
         response = await authAPI.signup(username, name, email, password);
       } else {
@@ -43,6 +43,17 @@ export default function AuthCard({ mode }: AuthCardProps) {
       }
 
       setAuthToken(response.token);
+      // Persist user info for campaign operations (supports multiple response shapes)
+      if (typeof window !== 'undefined') {
+        const userId = response?.user?.id || response?._id || response?.id;
+        const userEmail = response?.user?.email || response?.email || '';
+        const userName = response?.user?.name || response?.name || '';
+        if (userId) {
+          localStorage.setItem('userId', userId);
+          localStorage.setItem('userEmail', userEmail);
+          localStorage.setItem('userName', userName);
+        }
+      }
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'An error occurred');

@@ -19,6 +19,14 @@ export default function Sidebar() {
 
   const handleLogout = () => {
     removeAuthToken();
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('userName');
+        localStorage.removeItem('userData');
+      } catch {}
+    }
     router.push('/login');
   };
 
