@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import Sidebar from "@/components/Sidebar";
 import CreateCampaignModal from "@/components/CreateCampaignModal";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -109,10 +110,12 @@ export default function CampaignsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar />
       <Toaster position="top-right" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <h1 className="text-4xl font-bold text-slate-900">Campaigns</h1>
@@ -233,6 +236,7 @@ export default function CampaignsPage() {
             ))}
           </div>
         )}
+        </div>
       </div>
 
       <CreateCampaignModal
