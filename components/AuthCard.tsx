@@ -43,12 +43,24 @@ export default function AuthCard({ mode }: AuthCardProps) {
       }
 
       setAuthToken(response.token);
+<<<<<<< HEAD
       // Persist user id for campaign operations
       if (response?._id) {
         if (typeof window !== 'undefined') {
           localStorage.setItem('userId', response._id);
           localStorage.setItem('userEmail', response.email || '');
           localStorage.setItem('userName', response.name || '');
+=======
+      // Persist user info for campaign operations (supports multiple response shapes)
+      if (typeof window !== 'undefined') {
+        const userId = response?.user?.id || response?._id || response?.id;
+        const userEmail = response?.user?.email || response?.email || '';
+        const userName = response?.user?.name || response?.name || '';
+        if (userId) {
+          localStorage.setItem('userId', userId);
+          localStorage.setItem('userEmail', userEmail);
+          localStorage.setItem('userName', userName);
+>>>>>>> temp-fixes
         }
       }
       router.push('/dashboard');
@@ -157,10 +169,14 @@ export default function AuthCard({ mode }: AuthCardProps) {
               type="button"
               variant="outline"
               className="w-full h-11 border-gray-300 hover:bg-gray-50 text-base font-medium"
+<<<<<<< HEAD
               onClick={() => {
                 const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://marketa-server.onrender.com';
                 window.location.href = `${base}/auth/google`;
               }}
+=======
+              onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3500'}/auth/google`}
+>>>>>>> temp-fixes
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path
