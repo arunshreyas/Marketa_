@@ -116,10 +116,15 @@ export default function DashboardPage() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-full">
-                <Avatar className="w-10 h-10 bg-blue-600 cursor-pointer hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 transition-all">
-                  <AvatarImage src={userData?.profile_picture ? `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://marketa-server.onrender.com'}${userData.profile_picture}` : undefined} alt={userData?.name || 'User'} />
-                  <AvatarFallback className="bg-blue-600 text-white font-medium">
+              <button className="focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-full cursor-pointer">
+                <Avatar className="w-10 h-10 bg-blue-600 hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 transition-all">
+                  {userData?.profile_picture && (
+                    <AvatarImage
+                      src={`${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://marketa-server.onrender.com'}${userData.profile_picture}`}
+                      alt={userData?.name || 'User'}
+                    />
+                  )}
+                  <AvatarFallback className="bg-blue-600 text-white font-medium text-sm">
                     {userData?.name?.charAt(0).toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>

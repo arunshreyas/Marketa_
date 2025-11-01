@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { TrendingUp } from 'lucide-react';
-import { authAPI, setAuthToken, getAuthToken } from '@/utils/api';
+import { authAPI, setAuthToken, getAuthToken, setUserData } from '@/utils/api';
 
 interface AuthCardProps {
   mode: 'login' | 'signup';
@@ -48,10 +48,17 @@ export default function AuthCard({ mode }: AuthCardProps) {
         const userId = response?.user?.id || response?._id || response?.id;
         const userEmail = response?.user?.email || response?.email || '';
         const userName = response?.user?.name || response?.name || '';
+        const profilePicture = response?.user?.profile_picture || response?.profile_picture || null;
         if (userId) {
           localStorage.setItem('userId', userId);
           localStorage.setItem('userEmail', userEmail);
           localStorage.setItem('userName', userName);
+          setUserData({
+            id: userId,
+            email: userEmail,
+            name: userName,
+            profile_picture: profilePicture,
+          });
         }
       }
       router.push('/dashboard');
