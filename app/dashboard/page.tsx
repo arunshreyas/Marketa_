@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Settings, User, LogOut, LayoutDashboard } from 'lucide-react';
+import { Settings, User, LogOut, LayoutDashboard, Menu } from 'lucide-react';
 import { chatAPI, getAuthToken, getUserData, ChatMessage, setAuthToken, removeAuthToken } from '@/utils/api';
 
 export default function DashboardPage() {
@@ -22,6 +22,7 @@ export default function DashboardPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [userData, setUserData] = useState<any>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -104,20 +105,31 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
+      <div className="hidden lg:block">
+        <Sidebar />
+      </div>
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col">
-        <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Marketa AI</h1>
-            <p className="text-sm text-gray-600 mt-0.5">Your Personal Marketing Assistant</p>
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
+            >
+              <Menu className="w-5 h-5 text-gray-600" />
+            </button>
+            <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">Marketa AI</h1>
+            <p className="hidden sm:block text-xs sm:text-sm text-gray-600 mt-0.5 truncate">Your Personal Marketing Assistant</p>
+            </div>
           </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-full cursor-pointer">
-                <Avatar className="w-10 h-10 bg-blue-600 hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 transition-all">
+              <button className="focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-full cursor-pointer flex-shrink-0">
+                <Avatar className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-600 hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 transition-all">
                   {userData?.profile_picture && (
                     <AvatarImage
                       src={`${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://marketa-server.onrender.com'}${userData.profile_picture}`}

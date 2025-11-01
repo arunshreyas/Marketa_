@@ -1,6 +1,6 @@
 'use client';
 
-import { TrendingUp, LayoutDashboard, Megaphone, Info, Users, Settings, LogOut } from 'lucide-react';
+import { TrendingUp, LayoutDashboard, Megaphone, Info, Users, Settings, LogOut, X } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { removeAuthToken } from '@/utils/api';
@@ -13,7 +13,12 @@ const menuItems = [
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -30,14 +35,42 @@ export default function Sidebar() {
     router.push('/login');
   };
 
+  const handleNavigation = (path: string) => {
+    router.push(path);
+    onClose?.();
+  };
+
   return (
-    <div className="w-64 h-screen bg-white border-r border-gray-200 flex flex-col">
+    <>
+      {/* Mobile overlay */}
+      {isOpen && onClose && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={cn(
+        "fixed lg:static inset-y-0 left-0 z-50 w-64 h-screen bg-white border-r border-gray-200 flex flex-col transform transition-transform duration-300 ease-in-out lg:transform-none",
+        isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      )}>
       <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
             <TrendingUp className="w-6 h-6 text-white" strokeWidth={2.5} />
           </div>
           <span className="text-xl font-bold text-gray-900">Marketa</span>
+          </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-600" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -49,7 +82,7 @@ export default function Sidebar() {
           return (
             <button
               key={item.path}
-              onClick={() => router.push(item.path)}
+              onClick={() => handleNavigation(item.path)}
               className={cn(
                 'w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors',
                 isActive
@@ -73,6 +106,7 @@ export default function Sidebar() {
           <span>Logout</span>
         </button>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
