@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import Sidebar from "@/components/Sidebar";
 import toast, { Toaster } from "react-hot-toast";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3500";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://marketa-server.onrender.com";
 
 interface UserData {
   _id: string;
