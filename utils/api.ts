@@ -123,6 +123,40 @@ export const chatAPI = {
   },
 };
 
+export const campaignAPI = {
+  getCampaign: async (campaignId: string, token: string): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/campaigns/${campaignId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch campaign');
+    }
+
+    return response.json();
+  },
+
+  sendCampaignMessage: async (campaignId: string, prompt: string, userId: string, token: string): Promise<{ response: string }> => {
+    const response = await fetch(`${API_BASE_URL}/campaigns/${campaignId}/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ prompt, userId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to get response');
+    }
+
+    return response.json();
+  },
+};
+
 export const getAuthToken = (): string | null => {
   if (typeof window !== 'undefined') {
     return localStorage.getItem('authToken');
