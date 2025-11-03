@@ -5,13 +5,19 @@ import { useRouter } from 'next/navigation';
 import CampaignHeader from '@/components/CampaignHeader';
 import CampaignChatMessage from '@/components/CampaignChatMessage';
 import CampaignChatInput from '@/components/CampaignChatInput';
-import { campaignAPI, getAuthToken, getUserData } from '@/utils/api';
+import { campaignAPI, getAuthToken, getUserData, messageAPI } from '@/utils/api';
 import { Loader } from 'lucide-react';
 
 interface ChatMessage {
+  id?: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  metadata?: {
+    ai_model?: string;
+    tokens_used?: number;
+    campaign_suggestions?: string[];
+  };
 }
 
 interface CampaignChatProps {
@@ -22,6 +28,7 @@ export default function CampaignChat({ campaignId }: CampaignChatProps) {
   const router = useRouter();
   const [campaign, setCampaign] = useState<any>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +47,8 @@ export default function CampaignChat({ campaignId }: CampaignChatProps) {
 
         const campaignData = await campaignAPI.getCampaign(campaignId, token);
         setCampaign(campaignData);
+
+        setConversationId(campaignId);
 
         const savedMessages = localStorage.getItem(STORAGE_KEY);
         if (savedMessages) {
@@ -74,6 +83,7 @@ export default function CampaignChat({ campaignId }: CampaignChatProps) {
 
   const handleSendMessage = async (content: string) => {
     const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
       role: 'user',
       content,
       timestamp: new Date(),
@@ -93,6 +103,19 @@ export default function CampaignChat({ campaignId }: CampaignChatProps) {
         return;
       }
 
+      if (!conversationId) {
+        console.error('No conversation ID available');
+        throw new Error('Conversation not initialized');
+      }
+
+      await messageAPI.sendMessage(
+        conversationId,
+        user.id,
+        content,
+        'user',
+        token
+      );
+
       const response = await campaignAPI.sendCampaignMessage(
         campaignId,
         content,
@@ -101,17 +124,31 @@ export default function CampaignChat({ campaignId }: CampaignChatProps) {
       );
 
       const assistantMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
         role: 'assistant',
         content: response.response,
         timestamp: new Date(),
+        metadata: response.metadata,
       };
 
       const finalMessages = [...updatedMessages, assistantMessage];
       setMessages(finalMessages);
       saveMessages(finalMessages);
+
+      if (response.metadata) {
+        await messageAPI.sendMessage(
+          conversationId,
+          '',
+          response.response,
+          'assistant',
+          token,
+          response.metadata
+        );
+      }
     } catch (err) {
       console.error('Error sending message:', err);
       const errorMessage: ChatMessage = {
+        id: `error-${Date.now()}`,
         role: 'assistant',
         content: 'Sorry, I encountered an error processing your request. Please try again.',
         timestamp: new Date(),

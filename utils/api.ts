@@ -138,7 +138,14 @@ export const campaignAPI = {
     return response.json();
   },
 
-  sendCampaignMessage: async (campaignId: string, prompt: string, userId: string, token: string): Promise<{ response: string }> => {
+  sendCampaignMessage: async (campaignId: string, prompt: string, userId: string, token: string): Promise<{
+    response: string;
+    metadata?: {
+      ai_model?: string;
+      tokens_used?: number;
+      campaign_suggestions?: string[];
+    };
+  }> => {
     const response = await fetch(`${API_BASE_URL}/campaigns/${campaignId}/chat`, {
       method: 'POST',
       headers: {
@@ -151,6 +158,43 @@ export const campaignAPI = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || 'Failed to get response');
+    }
+
+    return response.json();
+  },
+};
+
+export const messageAPI = {
+  sendMessage: async (
+    conversationId: string,
+    sender: string,
+    content: string,
+    role: 'user' | 'assistant' | 'system',
+    token: string,
+    metadata?: {
+      ai_model?: string;
+      tokens_used?: number;
+      campaign_suggestions?: string[];
+    }
+  ): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        conversation: conversationId,
+        sender,
+        content,
+        role,
+        metadata: metadata || {},
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to send message');
     }
 
     return response.json();
