@@ -32,7 +32,6 @@ export default function CreateCampaignModal({
   onClose,
   onSuccess,
 }: CreateCampaignModalProps) {
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "https://marketa-server.onrender.com";
   const [formData, setFormData] = useState({
     campaign_name: "",
     status: "Active",
@@ -79,7 +78,7 @@ export default function CreateCampaignModal({
       };
 
       const response = await fetch(
-        `${API_BASE}/campaigns/`,
+        "https://marketa-server.onrender.com/campaigns/",
         {
           method: "POST",
           headers: {
