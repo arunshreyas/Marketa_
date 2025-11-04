@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Sidebar from '@/components/Sidebar';
 import CampaignHeader from '@/components/CampaignHeader';
 import CampaignChatMessage from '@/components/CampaignChatMessage';
 import CampaignChatInput from '@/components/CampaignChatInput';
-import { campaignAPI, getAuthToken, getUserData, messageAPI } from '@/utils/api';
-import { Loader } from 'lucide-react';
+import { campaignAPI, getAuthToken, getUserData } from '@/utils/api';
+import { Loader, Menu } from 'lucide-react';
 
 interface ChatMessage {
   id?: string;
@@ -32,6 +33,7 @@ export default function CampaignChat({ campaignId }: CampaignChatProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const STORAGE_KEY = `campaign-chat-${campaignId}`;
@@ -103,19 +105,6 @@ export default function CampaignChat({ campaignId }: CampaignChatProps) {
         return;
       }
 
-      if (!conversationId) {
-        console.error('No conversation ID available');
-        throw new Error('Conversation not initialized');
-      }
-
-      await messageAPI.sendMessage(
-        conversationId,
-        user.id,
-        content,
-        'user',
-        token
-      );
-
       const response = await campaignAPI.sendCampaignMessage(
         campaignId,
         content,
@@ -134,17 +123,6 @@ export default function CampaignChat({ campaignId }: CampaignChatProps) {
       const finalMessages = [...updatedMessages, assistantMessage];
       setMessages(finalMessages);
       saveMessages(finalMessages);
-
-      if (response.metadata) {
-        await messageAPI.sendMessage(
-          conversationId,
-          '',
-          response.response,
-          'assistant',
-          token,
-          response.metadata
-        );
-      }
     } catch (err) {
       console.error('Error sending message:', err);
       const errorMessage: ChatMessage = {
@@ -192,10 +170,23 @@ export default function CampaignChat({ campaignId }: CampaignChatProps) {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      <CampaignHeader campaign={campaign} />
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex-1 flex flex-col min-w-0">
+        <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-2">
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <Menu className="w-5 h-5 text-gray-600" />
+          </button>
+          <h1 className="text-lg font-bold text-gray-900">{campaign?.name}</h1>
+        </div>
+
+        <CampaignHeader campaign={campaign} />
+
+        <div className="flex-1 flex flex-col min-h-0">
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-4xl mx-auto w-full px-4 py-6">
             {messages.length === 0 && (
@@ -242,6 +233,7 @@ export default function CampaignChat({ campaignId }: CampaignChatProps) {
         </div>
 
         <CampaignChatInput onSendMessage={handleSendMessage} disabled={isSending} />
+        </div>
       </div>
     </div>
   );

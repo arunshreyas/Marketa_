@@ -3,8 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
-import ChatWindow from '@/components/ChatWindow';
-import InputBar from '@/components/InputBar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -14,82 +12,49 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Settings, User, LogOut, LayoutDashboard, Menu } from 'lucide-react';
-import { chatAPI, getAuthToken, getUserData, ChatMessage, setAuthToken, removeAuthToken } from '@/utils/api';
+import { Settings, User, LogOut, LayoutDashboard, Menu, MessageSquare, Plus, Loader } from 'lucide-react';
+import { chatAPI, getAuthToken, getUserData, setAuthToken, removeAuthToken, campaignAPI } from '@/utils/api';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true);
   const [userData, setUserData] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // 1. Check if there's a token in the URL
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const token = params.get('token');
-      if (token) {
-        setAuthToken(token);
-        // Remove token from URL after storing it
-        window.history.replaceState({}, document.title, '/dashboard');
+    const loadData = async () => {
+      // 1. Check if there's a token in the URL
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token');
+        if (token) {
+          setAuthToken(token);
+          window.history.replaceState({}, document.title, '/dashboard');
+        }
       }
-    }
-    // 2. Check localStorage for token as before
-    const storedToken = getAuthToken();
-    if (!storedToken) {
-      router.push('/login');
-      return;
-    }
-    const data = getUserData();
-    setUserData(data);
-  }, [router]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
-
-  const handleSendMessage = async (content: string) => {
-    const userMessage: ChatMessage = {
-      role: 'user',
-      content,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setIsTyping(true);
-
-    try {
-      const token = getAuthToken();
-      const user = getUserData();
-
-      if (!token || !user) {
+      // 2. Check localStorage for token
+      const storedToken = getAuthToken();
+      if (!storedToken) {
         router.push('/login');
         return;
       }
+      const data = getUserData();
+      setUserData(data);
 
-      const response = await chatAPI.sendMessage(content, user.id, token);
+      // 3. Fetch campaigns
+      try {
+        const campaignsData = await campaignAPI.getCampaigns(storedToken);
+        setCampaigns(campaignsData || []);
+      } catch (error) {
+        console.error('Failed to fetch campaigns:', error);
+      } finally {
+        setIsLoadingCampaigns(false);
+      }
+    };
 
-      const assistantMessage: ChatMessage = {
-        role: 'assistant',
-        content: response.response,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch (error) {
-      console.error('Failed to send message:', error);
-      const errorMessage: ChatMessage = {
-        role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsTyping(false);
-    }
-  };
+    loadData();
+  }, [router]);
 
   const handleLogout = () => {
     removeAuthToken();
@@ -170,10 +135,80 @@ export default function DashboardPage() {
           </DropdownMenu>
         </header>
 
-        <div className="flex-1 flex flex-col min-h-0">
-          <ChatWindow messages={messages} isTyping={isTyping} />
-          <div ref={messagesEndRef} />
-          <InputBar onSendMessage={handleSendMessage} disabled={isTyping} />
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Campaigns</h2>
+              <p className="text-gray-600">Manage and chat with your marketing campaigns</p>
+            </div>
+
+            {isLoadingCampaigns ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader className="w-8 h-8 text-blue-600 animate-spin" />
+              </div>
+            ) : campaigns.length === 0 ? (
+              <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+                <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No campaigns yet</h3>
+                <p className="text-gray-600 mb-6">Create your first campaign to get started</p>
+                <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                  <Plus className="w-5 h-5" />
+                  Create Campaign
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {campaigns.map((campaign) => (
+                  <button
+                    key={campaign.id || campaign._id}
+                    onClick={() => router.push(`/campaigns/${campaign.id || campaign._id}/chat`)}
+                    className="group bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg hover:border-blue-300 transition-all duration-200"
+                  >
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                          {campaign.name}
+                        </h3>
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          campaign.status === 'active' ? 'bg-green-100 text-green-800' :
+                          campaign.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
+                          campaign.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {campaign.status || 'draft'}
+                        </span>
+                      </div>
+
+                      {campaign.goal && (
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                          <span className="font-medium text-gray-700">Goal:</span> {campaign.goal}
+                        </p>
+                      )}
+
+                      {campaign.audience && (
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                          <span className="font-medium text-gray-700">Audience:</span> {campaign.audience}
+                        </p>
+                      )}
+
+                      {campaign.budget && (
+                        <p className="text-sm text-gray-600 mb-4">
+                          <span className="font-medium text-gray-700">Budget:</span> ${campaign.budget.toLocaleString()}
+                        </p>
+                      )}
+
+                      <div className="pt-4 border-t border-gray-200 flex items-center justify-between">
+                        <span className="text-xs text-gray-500">
+                          {new Date(campaign.createdAt || campaign.created_at).toLocaleDateString()}
+                        </span>
+                        <MessageSquare className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -124,6 +124,20 @@ export const chatAPI = {
 };
 
 export const campaignAPI = {
+  getCampaigns: async (token: string): Promise<any[]> => {
+    const response = await fetch(`${API_BASE_URL}/campaigns`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch campaigns');
+    }
+
+    return response.json();
+  },
+
   getCampaign: async (campaignId: string, token: string): Promise<any> => {
     const response = await fetch(`${API_BASE_URL}/campaigns/${campaignId}`, {
       headers: {
