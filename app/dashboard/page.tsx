@@ -151,7 +151,7 @@ export default function DashboardPage() {
                 <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No campaigns yet</h3>
                 <p className="text-gray-600 mb-6">Create your first campaign to get started</p>
-                <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <button onClick={() => router.push('/campaigns?new=1')} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                   <Plus className="w-5 h-5" />
                   Create Campaign
                 </button>

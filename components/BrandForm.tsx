@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TrendingUp } from 'lucide-react';
-import { brandAPI, getAuthToken } from '@/utils/api';
+import { brandAPI } from '@/utils/api';
 
 export default function BrandForm() {
   const router = useRouter();
@@ -26,21 +26,18 @@ export default function BrandForm() {
     setLoading(true);
 
     try {
-      const token = getAuthToken();
-      if (!token) {
+      const userId = typeof window !== 'undefined' ? (localStorage.getItem('userId') || '') : '';
+      if (!userId) {
         router.push('/login');
         return;
       }
 
-      await brandAPI.saveBrand(
-        {
-          brandName,
-          productDescription,
-          targetAudience,
-          brandTone,
-        },
-        token
-      );
+      await brandAPI.saveBrand({
+        user_id: userId,
+        brand_name: brandName,
+        product_description: productDescription,
+        target_audience: targetAudience,
+      });
 
       router.push('/dashboard');
     } catch (err: any) {

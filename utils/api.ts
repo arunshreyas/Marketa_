@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ;
+const API_BASE_URL = "https://marketa-server.onrender.com" ;
 
 export interface AuthResponse {
   token: string;
@@ -11,10 +11,10 @@ export interface AuthResponse {
 }
 
 export interface BrandData {
-  brandName: string;
-  productDescription: string;
-  targetAudience: string;
-  brandTone: string;
+  user_id: string;
+  brand_name: string;
+  product_description: string;
+  target_audience: string;
 }
 
 export interface ChatMessage {
@@ -70,30 +70,25 @@ export const authAPI = {
 };
 
 export const brandAPI = {
-  saveBrand: async (brandData: BrandData, token: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/brand`, {
+  saveBrand: async (brandData: BrandData): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/brands`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify(brandData),
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({}));
       throw new Error(error.message || 'Failed to save brand');
     }
 
     return response.json();
   },
 
-  getBrand: async (token: string): Promise<BrandData> => {
-    const response = await fetch(`${API_BASE_URL}/api/brand`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+  getBrandByUser: async (userId: string): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/brands/by-user/${userId}`);
 
     if (!response.ok) {
       throw new Error('Failed to fetch brand');

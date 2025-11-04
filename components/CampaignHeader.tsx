@@ -23,8 +23,8 @@ const statusConfig = {
 
 export default function CampaignHeader({ campaign }: CampaignHeaderProps) {
   const router = useRouter();
-  const status = campaign.status || 'draft';
-  const config = statusConfig[status];
+  const statusKey = (campaign.status || 'draft').toString().toLowerCase() as keyof typeof statusConfig;
+  const config = statusConfig[statusKey] || statusConfig.draft;
   const StatusIcon = config.icon;
 
   return (
@@ -40,7 +40,7 @@ export default function CampaignHeader({ campaign }: CampaignHeaderProps) {
 
         <div className="flex items-start justify-between gap-6">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">{campaign.name}</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">{campaign.name || (campaign as any).campaign_name}</h1>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {campaign.goal && (

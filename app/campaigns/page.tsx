@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Search, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,14 +25,23 @@ interface Campaign {
 }
 
 export default function CampaignsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "https://marketa-server.onrender.com";
 
   useEffect(() => {
     fetchCampaigns();
   }, []);
+
+  useEffect(() => {
+    if (searchParams?.get("new") === "1") {
+      setIsModalOpen(true);
+    }
+  }, [searchParams]);
 
   const fetchCampaigns = async () => {
     setLoading(true);
@@ -57,7 +67,7 @@ export default function CampaignsPage() {
         return;
       }
       const response = await fetch(
-        `https://marketa-server.onrender.com/campaigns/user/${userId}`
+        `${API_BASE}/campaigns/user/${encodeURIComponent(userId)}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -77,7 +87,7 @@ export default function CampaignsPage() {
 
     try {
       const response = await fetch(
-        `https://marketa-server.onrender.com/campaigns/${campaignId}`,
+        `${API_BASE}/campaigns/${campaignId}`,
         { method: "DELETE" }
       );
       if (response.ok) {
@@ -218,6 +228,7 @@ export default function CampaignsPage() {
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={() => router.push(`/campaigns/${campaign._id}/chat`)}
                     className="flex-1 border-slate-200 hover:bg-slate-50"
                   >
                     <Eye className="w-4 h-4 mr-2" />
