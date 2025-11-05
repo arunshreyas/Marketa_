@@ -49,7 +49,12 @@ export default function CampaignChatClient() {
     const fetchCampaign = async () => {
       try {
         setIsLoading(true);
-        const campaignData = await campaignAPI.getCampaign(campaignId);
+        const token = getAuthToken();
+        if (!token) {
+          router.push('/login');
+          return;
+        }
+        const campaignData = await campaignAPI.getCampaign(campaignId, token);
         setCampaign(campaignData);
 
         const savedMessages = localStorage.getItem(

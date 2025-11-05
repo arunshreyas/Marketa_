@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export interface AuthResponse {
   token: string;
@@ -123,46 +123,6 @@ export const campaignAPI = {
     const response = await fetch(`${API_BASE_URL}/campaigns`, {
       headers: {
         'Authorization': `Bearer ${token}`,
-export const campaignAPI = {
-  getCampaign: async (campaignId: string): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/campaigns/${campaignId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch campaign');
-    }
-
-    return response.json();
-  },
-
-  sendCampaignMessage: async (
-    prompt: string,
-    campaignId: string,
-    userId: string,
-    token: string
-  ): Promise<{ response: string }> => {
-    const response = await fetch(`${API_BASE_URL}/api/marketa/campaign-chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ prompt, campaignId, userId }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to get response');
-    }
-
-    return response.json();
-  },
-};
-
       },
     });
 
