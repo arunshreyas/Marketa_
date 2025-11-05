@@ -147,26 +147,29 @@ export const campaignAPI = {
     return response.json();
   },
 
-  sendCampaignMessage: async (campaignId: string, prompt: string, userId: string, token: string): Promise<{
-    response: string;
-    metadata?: {
-      ai_model?: string;
-      tokens_used?: number;
-      campaign_suggestions?: string[];
-    };
-  }> => {
-    const response = await fetch(`${API_BASE_URL}/campaigns/${campaignId}/chat`, {
+  sendCampaignMessage: async (
+    campaignId: string,
+    prompt: string,
+    userId: string,
+    token: string
+  ): Promise<any> => {
+    const content = (prompt || '').trim();
+    if (!content) {
+      throw new Error('Message content is required');
+    }
+    const response = await fetch(`${API_BASE_URL}/messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify({ prompt, userId }),
+      body: JSON.stringify({ campaign: campaignId, sender: userId, content, role: 'user' }),
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to get response');
+      // Attempt JSON first, fallback to text to avoid HTML parse errors
+      const error = await response.json().catch(async () => ({ message: await response.text() }));
+      throw new Error(error.message || 'Failed to send message');
     }
 
     return response.json();
@@ -175,7 +178,7 @@ export const campaignAPI = {
 
 export const messageAPI = {
   sendMessage: async (
-    conversationId: string,
+    campaignId: string,
     sender: string,
     content: string,
     role: 'user' | 'assistant' | 'system',
@@ -193,7 +196,7 @@ export const messageAPI = {
         'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
-        conversation: conversationId,
+        campaign: campaignId,
         sender,
         content,
         role,
@@ -202,7 +205,7 @@ export const messageAPI = {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(async () => ({ message: await response.text() }));
       throw new Error(error.message || 'Failed to send message');
     }
 
