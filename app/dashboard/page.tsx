@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Settings, User, LogOut, LayoutDashboard, Menu, MessageSquare, Plus, Loader } from 'lucide-react';
-import { chatAPI, getAuthToken, getUserData, setAuthToken, removeAuthToken, campaignAPI } from '@/utils/api';
+import { chatAPI, getAuthToken, getUserData, setAuthToken, removeAuthToken, campaignAPI, setUserData as persistUserData } from '@/utils/api';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -39,6 +39,27 @@ export default function DashboardPage() {
         router.push('/login');
         return;
       }
+      // 2a. Ensure user data is present after Google redirect by calling /users/me
+      try {
+        const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://marketa-server.onrender.com';
+        const meRes = await fetch(`${base}/users/me`, {
+          headers: { Authorization: `Bearer ${storedToken}` },
+          // cookies are optional; header is primary
+          credentials: 'include',
+        });
+        if (meRes.ok) {
+          const me = await meRes.json();
+          if (me && me.user) {
+            persistUserData({
+              id: me.user._id || me.user.id,
+              email: me.user.email,
+              name: me.user.name,
+              profile_picture: me.user.profile_picture || null,
+            });
+            setUserData(me.user);
+          }
+        }
+      } catch {}
       const data = getUserData();
       setUserData(data);
 

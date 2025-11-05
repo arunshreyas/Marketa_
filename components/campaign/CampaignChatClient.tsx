@@ -105,8 +105,8 @@ export default function CampaignChatClient() {
 
     try {
       const response = await campaignAPI.sendCampaignMessage(
-        content,
         campaignId,
+        content,
         userData.id,
         token
       );
