@@ -52,15 +52,35 @@ export default function CampaignChat({ campaignId }: CampaignChatProps) {
 
         setConversationId(campaignId);
 
-        const savedMessages = localStorage.getItem(STORAGE_KEY);
-        if (savedMessages) {
-          const parsed = JSON.parse(savedMessages);
-          setMessages(
-            parsed.map((msg: any) => ({
-              ...msg,
-              timestamp: new Date(msg.timestamp),
-            }))
-          );
+        // Try loading from server first for canonical history
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/messages/campaign/${campaignId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const serverMessages = await res.json();
+            const mapped = (serverMessages || []).map((m: any) => ({
+              id: m._id,
+              role: m.role,
+              content: m.content,
+              timestamp: new Date(m.createdAt || Date.now()),
+            }));
+            setMessages(mapped);
+            saveMessages(mapped);
+          } else {
+            // fallback to local storage
+            const savedMessages = localStorage.getItem(STORAGE_KEY);
+            if (savedMessages) {
+              const parsed = JSON.parse(savedMessages);
+              setMessages(parsed.map((msg: any) => ({ ...msg, timestamp: new Date(msg.timestamp) })));
+            }
+          }
+        } catch (_) {
+          const savedMessages = localStorage.getItem(STORAGE_KEY);
+          if (savedMessages) {
+            const parsed = JSON.parse(savedMessages);
+            setMessages(parsed.map((msg: any) => ({ ...msg, timestamp: new Date(msg.timestamp) })));
+          }
         }
 
         setError(null);
@@ -74,6 +94,43 @@ export default function CampaignChat({ campaignId }: CampaignChatProps) {
 
     loadData();
   }, [campaignId, router]);
+
+  // Subscribe to server-sent events for real-time assistant messages
+  useEffect(() => {
+    if (!campaignId) return;
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/messages/stream/${campaignId}`;
+    const source = new EventSource(url);
+
+    const onNewMessage = (e: MessageEvent) => {
+      try {
+        const aiMessage = JSON.parse(e.data);
+        // map to UI ChatMessage
+        const mapped = {
+          id: aiMessage._id,
+          role: aiMessage.role,
+          content: aiMessage.content,
+          timestamp: new Date(aiMessage.createdAt || Date.now()),
+        } as ChatMessage;
+        setMessages(prev => {
+          const next = [...prev, mapped];
+          saveMessages(next);
+          return next;
+        });
+      } catch (err) {
+        // ignore parse errors
+      }
+    };
+
+    source.addEventListener('message:new', onNewMessage);
+    source.onerror = () => {
+      // EventSource auto-retries by default; no-op
+    };
+
+    return () => {
+      source.removeEventListener('message:new', onNewMessage as any);
+      source.close();
+    };
+  }, [campaignId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -111,18 +168,80 @@ export default function CampaignChat({ campaignId }: CampaignChatProps) {
         user.id,
         token
       );
+      // If server already returned an aiMessage synchronously, append it now
+      if (response && response.aiMessage && response.aiMessage.content) {
+        const ai = response.aiMessage;
+        const assistantMessage: ChatMessage = {
+          id: ai._id || `assistant-${Date.now()}`,
+          role: ai.role || 'assistant',
+          content: ai.content,
+          timestamp: new Date(ai.createdAt || Date.now()),
+        };
+        setMessages(prev => {
+          // de-dupe by id + content
+          if (prev.some(m => (m as any).id === assistantMessage.id && m.content === assistantMessage.content)) return prev;
+          const next = [...prev, assistantMessage];
+          saveMessages(next);
+          return next;
+        });
+      } else {
+        // Fallback: short-poll for assistant reply if SSE hasn't arrived yet
+        const poll = async (attempt = 0) => {
+          if (attempt > 20) return; // ~20s max if 1s interval
+          try {
+            const auth = getAuthToken();
+            // 1) Try responses (as requested)
+            const resResponses = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/response/by-campaign/${campaignId}`, {
+              headers: auth ? { 'Authorization': `Bearer ${auth}` } : {}
+            });
+            if (resResponses.ok) {
+              const responses = await resResponses.json();
+              const last = (responses || []).sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).pop();
+              if (last && last.response) {
+                const mapped: ChatMessage = {
+                  id: last._id,
+                  role: 'assistant',
+                  content: last.response,
+                  timestamp: new Date(last.created_at || Date.now()),
+                };
+                setMessages(prev => {
+                  if (prev.some(p => (p as any).id === mapped.id)) return prev;
+                  const next = [...prev, mapped];
+                  saveMessages(next);
+                  return next;
+                });
+                return; // stop polling after found
+              }
+            }
 
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        content: response.response,
-        timestamp: new Date(),
-        metadata: response.metadata,
-      };
-
-      const finalMessages = [...updatedMessages, assistantMessage];
-      setMessages(finalMessages);
-      saveMessages(finalMessages);
+            // 2) Fallback to messages
+            const resMessages = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/messages/campaign/${campaignId}`, {
+              headers: auth ? { 'Authorization': `Bearer ${auth}` } : {}
+            });
+            if (resMessages.ok) {
+              const serverMessages = await resMessages.json();
+              const lastAssistant = (serverMessages || []).reverse().find((m: any) => m.role === 'assistant');
+              if (lastAssistant) {
+                const mapped: ChatMessage = {
+                  id: lastAssistant._id,
+                  role: lastAssistant.role,
+                  content: lastAssistant.content,
+                  timestamp: new Date(lastAssistant.createdAt || Date.now()),
+                };
+                setMessages(prev => {
+                  if (prev.some(p => (p as any).id === mapped.id)) return prev;
+                  const next = [...prev, mapped];
+                  saveMessages(next);
+                  return next;
+                });
+                return; // stop polling after found
+              }
+            }
+          } catch (_) { /* ignore */ }
+          setTimeout(() => poll(attempt + 1), 1000);
+        };
+        poll();
+      }
     } catch (err) {
       console.error('Error sending message:', err);
       const errorMessage: ChatMessage = {
