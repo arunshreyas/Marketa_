@@ -15,11 +15,18 @@ interface Message {
   content: string;
   role: 'user' | 'assistant' | 'system';
   createdAt: string;
+  message_id?: string;
 }
 
 interface ChatViewProps {
   campaignId: string;
   campaignName: string;
+}
+
+interface AIResponse {
+  message_id: string;
+  reply: string;
+  timestamp?: string;
 }
 
 export default function ChatView({ campaignId, campaignName }: ChatViewProps) {
@@ -28,8 +35,11 @@ export default function ChatView({ campaignId, campaignName }: ChatViewProps) {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [pollingActive, setPollingActive] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const processedResponsesRef = useRef<Set<string>>(new Set());
 
   const API_BASE = 'https://marketa-server.onrender.com';
 
@@ -44,6 +54,83 @@ export default function ChatView({ campaignId, campaignName }: ChatViewProps) {
   useEffect(() => {
     adjustTextareaHeight();
   }, [inputMessage]);
+
+  useEffect(() => {
+    if (messages.length > 0 && !pollingActive) {
+      setPollingActive(true);
+      startPolling();
+    }
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [messages.length, pollingActive]);
+
+  const startPolling = async () => {
+    pollingIntervalRef.current = setInterval(async () => {
+      await pollForResponses();
+    }, 2000);
+  };
+
+  const pollForResponses = async () => {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE}/response`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        removeAuthToken();
+        router.push('/login');
+        return;
+      }
+
+      if (!response.ok) {
+        return;
+      }
+
+      const aiResponses: AIResponse[] = await response.json();
+
+      if (Array.isArray(aiResponses) && aiResponses.length > 0) {
+        for (const aiResponse of aiResponses) {
+          if (!processedResponsesRef.current.has(aiResponse.message_id)) {
+            attachAIResponse(aiResponse.message_id, aiResponse.reply);
+            processedResponsesRef.current.add(aiResponse.message_id);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error polling for responses:', err);
+    }
+  };
+
+  const attachAIResponse = (messageId: string, reply: string) => {
+    setMessages((prevMessages) => {
+      const messageIndex = prevMessages.findIndex((msg) => msg.message_id === messageId || msg._id === messageId);
+
+      if (messageIndex === -1) {
+        console.warn(`Message with id ${messageId} not found in chat state`);
+        return prevMessages;
+      }
+
+      const newMessages = [...prevMessages];
+      const aiMessage: Message = {
+        _id: `${messageId}-response-${Date.now()}`,
+        campaign: campaignId,
+        sender: 'ai',
+        content: reply,
+        role: 'assistant',
+        createdAt: new Date().toISOString(),
+      };
+
+      newMessages.splice(messageIndex + 1, 0, aiMessage);
+      return newMessages;
+    });
+  };
 
   const adjustTextareaHeight = () => {
     const textarea = textareaRef.current;
@@ -110,6 +197,8 @@ export default function ChatView({ campaignId, campaignName }: ChatViewProps) {
         return;
       }
 
+      const messageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
       const response = await fetch(`${API_BASE}/messages`, {
         method: 'POST',
         headers: {
@@ -121,6 +210,7 @@ export default function ChatView({ campaignId, campaignName }: ChatViewProps) {
           sender: userData.id,
           content: content,
           role: 'user',
+          message_id: messageId,
         }),
       });
 
@@ -134,7 +224,18 @@ export default function ChatView({ campaignId, campaignName }: ChatViewProps) {
         throw new Error('Failed to send message');
       }
 
-      await fetchMessages();
+      const sentMessage = await response.json();
+      const userMessage: Message = {
+        _id: sentMessage._id || messageId,
+        campaign: campaignId,
+        sender: userData.id,
+        content: content,
+        role: 'user',
+        createdAt: new Date().toISOString(),
+        message_id: messageId,
+      };
+
+      setMessages((prev) => [...prev, userMessage]);
     } catch (err) {
       console.error('Error sending message:', err);
       toast.error('Failed to send message');
