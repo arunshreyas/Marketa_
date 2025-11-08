@@ -93,13 +93,21 @@ export default function ChatView({ campaignId, campaignName }: ChatViewProps) {
         return;
       }
 
-      const aiResponses: AIResponse[] = await response.json();
+      const allResponses = await response.json();
 
-      if (Array.isArray(aiResponses) && aiResponses.length > 0) {
-        for (const aiResponse of aiResponses) {
-          if (!processedResponsesRef.current.has(aiResponse.message_id)) {
-            attachAIResponse(aiResponse.message_id, aiResponse.reply);
-            processedResponsesRef.current.add(aiResponse.message_id);
+      if (Array.isArray(allResponses) && allResponses.length > 0) {
+        for (const aiResponse of allResponses) {
+          const responseMessageId = aiResponse.message_id;
+          const campaignId_response = aiResponse.campaign?._id || aiResponse.campaign;
+
+          if (
+            responseMessageId &&
+            campaignId_response === campaignId &&
+            !processedResponsesRef.current.has(responseMessageId)
+          ) {
+            console.log('Attaching AI response:', responseMessageId, aiResponse.response);
+            attachAIResponse(responseMessageId, aiResponse.response);
+            processedResponsesRef.current.add(responseMessageId);
           }
         }
       }
@@ -197,8 +205,6 @@ export default function ChatView({ campaignId, campaignName }: ChatViewProps) {
         return;
       }
 
-      const messageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
       const response = await fetch(`${API_BASE}/messages`, {
         method: 'POST',
         headers: {
@@ -210,7 +216,6 @@ export default function ChatView({ campaignId, campaignName }: ChatViewProps) {
           sender: userData.id,
           content: content,
           role: 'user',
-          message_id: messageId,
         }),
       });
 
@@ -225,17 +230,23 @@ export default function ChatView({ campaignId, campaignName }: ChatViewProps) {
       }
 
       const sentMessage = await response.json();
+      const receivedMessageId = sentMessage.message_id || sentMessage._id;
+
       const userMessage: Message = {
-        _id: sentMessage._id || messageId,
+        _id: sentMessage._id,
         campaign: campaignId,
         sender: userData.id,
         content: content,
         role: 'user',
-        createdAt: new Date().toISOString(),
-        message_id: messageId,
+        createdAt: sentMessage.createdAt || new Date().toISOString(),
+        message_id: receivedMessageId,
       };
 
       setMessages((prev) => [...prev, userMessage]);
+
+      if (receivedMessageId) {
+        console.log('Message sent with ID:', receivedMessageId);
+      }
     } catch (err) {
       console.error('Error sending message:', err);
       toast.error('Failed to send message');
