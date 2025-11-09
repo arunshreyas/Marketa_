@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import toast from "react-hot-toast";
+import { getAuthToken } from "@/utils/api";
 
 interface CreateCampaignModalProps {
   isOpen: boolean;
@@ -61,6 +62,12 @@ export default function CreateCampaignModal({
     setLoading(true);
 
     try {
+      const token = getAuthToken();
+      if (!token) {
+        toast.error('User not authenticated');
+        setLoading(false);
+        return;
+      }
       const userId = typeof window !== 'undefined'
         ? localStorage.getItem("userId") || "default-user-id"
         : "default-user-id";
@@ -84,6 +91,7 @@ export default function CreateCampaignModal({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
           },
           body: JSON.stringify(payload),
         }

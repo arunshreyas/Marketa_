@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import Sidebar from "@/components/Sidebar";
 import CreateCampaignModal from "@/components/CreateCampaignModal";
 import toast, { Toaster } from "react-hot-toast";
+import { campaignAPI, getAuthToken } from "@/utils/api";
 
 interface Campaign {
 	_id: string;
@@ -46,35 +47,14 @@ export default function CampaignsPage() {
   const fetchCampaigns = async () => {
     setLoading(true);
     try {
-      let userId = typeof window !== 'undefined'
-        ? localStorage.getItem("userId") || ""
-        : "";
-      if (!userId && typeof window !== 'undefined') {
-        const token = localStorage.getItem('authToken') || '';
-        if (token && token.split('.').length === 3) {
-          try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            if (payload?.id) {
-              userId = payload.id;
-              localStorage.setItem('userId', userId);
-            }
-          } catch {}
-        }
-      }
-      if (!userId) {
+      const token = getAuthToken();
+      if (!token) {
         toast.error('User not authenticated');
         setCampaigns([]);
         return;
       }
-      const response = await fetch(
-        `${API_BASE}/campaigns/user/${encodeURIComponent(userId)}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setCampaigns(Array.isArray(data) ? data : []);
-      } else {
-        toast.error("Failed to fetch campaigns");
-      }
+      const data = await campaignAPI.getCampaigns(token);
+      setCampaigns(Array.isArray(data) ? data : []);
     } catch (error) {
       toast.error("Error loading campaigns");
     } finally {
@@ -86,9 +66,10 @@ export default function CampaignsPage() {
     if (!confirm("Are you sure you want to delete this campaign?")) return;
 
     try {
+      const token = getAuthToken();
       const response = await fetch(
         `${API_BASE}/campaigns/${campaignId}`,
-        { method: "DELETE" }
+        { method: "DELETE", headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
       if (response.ok) {
         toast.success("Campaign deleted successfully!");
