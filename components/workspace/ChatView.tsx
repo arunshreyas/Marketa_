@@ -77,7 +77,7 @@ export default function ChatView({ campaignId, campaignName }: ChatViewProps) {
   const pollForResponses = async () => {
     try {
       const token = getAuthToken();
-      const response = await fetch(`${API_BASE}/response`, {
+      const response = await fetch(`${API_BASE}/responses`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

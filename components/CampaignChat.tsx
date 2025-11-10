@@ -191,7 +191,7 @@ export default function CampaignChat({ campaignId }: CampaignChatProps) {
           try {
             const auth = getAuthToken();
             // 1) Try responses (as requested)
-            const resResponses = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/response/by-campaign/${campaignId}`, {
+            const resResponses = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/responses/by-campaign/${campaignId}`, {
               headers: auth ? { 'Authorization': `Bearer ${auth}` } : {}
             });
             if (resResponses.ok) {
