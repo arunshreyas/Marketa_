@@ -315,10 +315,10 @@ export default function SettingsPage() {
                             ? `${API_BASE_URL}${userData.profile_picture}`
                             : "")
                         }
-                        alt={userData.name}
+                        alt={userData?.name || userData?.username || userData?.email || "User"}
                       />
                       <AvatarFallback className="bg-blue-600 text-white text-2xl">
-                        {userData.name.charAt(0).toUpperCase()}
+                        {(userData?.name?.charAt(0).toUpperCase()) || (userData?.username?.charAt(0).toUpperCase()) || (userData?.email?.charAt(0).toUpperCase()) || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <label
