@@ -24,48 +24,12 @@ export interface ChatMessage {
 }
 
 export const authAPI = {
-  signup: async (username: string, name: string, email: string, password: string): Promise<{ token: string }> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, name, email, password }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: `Signup failed with status ${response.status}` }));
-        throw new Error(error.message || error.error || `Signup failed with status ${response.status}`);
-      }
-
-      return response.json();
-    } catch (error: any) {
-      if (error.message === 'Failed to fetch') {
-        throw new Error('Unable to connect to server. Please check your internet connection or verify the API URL.');
-      }
-      throw error;
-    }
+  getGithubAuthUrl: (): string => {
+    return `${API_BASE_URL}/auth/github`;
   },
 
-  login: async (email: string, password: string): Promise<{ token: string }> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: `Login failed with status ${response.status}` }));
-        throw new Error(error.message || error.error || `Login failed with status ${response.status}`);
-      }
-
-      return response.json();
-    } catch (error: any) {
-      if (error.message === 'Failed to fetch') {
-        throw new Error('Unable to connect to server. Please check your internet connection or verify the API URL.');
-      }
-      throw error;
-    }
+  getDiscordAuthUrl: (): string => {
+    return `${API_BASE_URL}/auth/discord`;
   },
 };
 
